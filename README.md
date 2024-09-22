@@ -2,7 +2,11 @@
 
 ### 1. ER Diagram
 
-
+Tables used - 
+- Client
+- Product
+- SalesOrder
+- Sales_Order_Detail
 
 ### 2. Basic SQL Commands
 
