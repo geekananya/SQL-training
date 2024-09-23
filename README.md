@@ -564,3 +564,68 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Error occurred. Transaction rolled back. Error: ' || SQLERRM);
 END;
 ```
+
+## 7. Database Security
+
+### SQL Injection
+
+SQL Injection (SQLi) is a type of an injection attack that makes it possible to execute malicious SQL statements. These statements control a database server behind a web application. Attackers can use SQL Injection vulnerabilities to bypass application security measures. They can go around authentication and authorization of a web page or web application and retrieve the content of the entire SQL database. They can also use SQL Injection to add, modify, and delete records in the database.
+
+```sql
+-- Define POST variables
+uname = request.POST['username']
+passwd = request.POST['password']
+
+-- SQL query vulnerable to SQLi
+sql = “SELECT id FROM users WHERE username=’” + uname + “’ AND password=’” + passwd + “’”
+
+-- Execute the SQL statement
+database.execute(sql)
+```
+
+Suppose the attacker inputs `password' OR 1=1`
+in the password field. Then the following query is executed-
+```sql
+SELECT id FROM users WHERE username='username' AND password='password' OR 1=1'
+```
+
+Because of the OR 1=1 statement, the WHERE clause returns the first id from the users table no matter what the username and password are, giving the attacker unauthorized access to the data.
+
+**Prevention Measures**
+
+- Input Validation
+- Parametrized Queries including Prepared Statements
+- Turn off the visibility of database errors on your production sites
+
+## 8. Dynamic SQL and metaprogramming
+
+**Dynamic SQL** allows SQL queries to be constructed and executed at runtime based on variable inputs or conditions.
+The use of bind variables `(:new_salary and :employee_id)` prevents SQL injection and improves performance
+
+```sql
+CREATE OR REPLACE PROCEDURE UpdateEmployeeSalary (
+    EmployeeID IN NUMBER,
+    NewSalary IN NUMBER
+)
+IS
+    sql_stmt VARCHAR2(200);
+BEGIN
+    -- Dynamic SQL statement
+    sql_stmt := 'UPDATE Employees SET Salary = :new_salary WHERE EmployeeID = :employee_id';
+
+    EXECUTE IMMEDIATE sql_stmt USING NewSalary, EmployeeID;
+
+    -- Check if any rows were updated
+    IF SQL%ROWCOUNT = 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error: No employee found with the specified ID.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Transaction committed successfully. Salary updated.');
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error occurred: ' || SQLERRM);
+        ROLLBACK;
+END UpdateEmployeeSalary;
+```
+
