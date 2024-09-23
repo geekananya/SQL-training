@@ -452,3 +452,115 @@ Conditions for deadlock -
 Deadlock Handling -
 - Prevention: Wound-Wait, Wait-Die (based on transaction timestamp)
 - Removal: Aborting, Ageing, Lock conversion (upgrading and downgrading)
+
+## 6. Stored Procedures and Functions
+
+### I. PROCEDURES
+
+```sql
+CREATE OR REPLACE PROCEDURE proc( X in NUMBER )
+IS  
+  num1 number;
+  op_name varchar(20);
+BEGIN  
+  num1:=X;
+  select name INTO op_name from students where roll=num1;
+  DBMS_OUTPUT.PUT_LINE('Student Name: ' || op_name);
+
+  EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    DBMS_OUTPUT.PUT_LINE('No student found with ID: ' || num1);
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+END;
+
+begin
+proc(20);
+end;
+```
+![image](https://github.com/user-attachments/assets/497ca959-1a08-4c41-8aab-b70f96c469f2)
+
+### II. FUNCTIONS
+
+A function must return a value and can be called within SQL statements.
+```sql
+CREATE OR REPLACE FUNCTION get_student_name (s_roll NUMBER)
+RETURN varchar
+IS
+  student_name varchar(20);
+BEGIN
+  SELECT name INTO student_name
+  FROM students
+  WHERE roll = s_roll;
+
+  RETURN student_name;
+  
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    RETURN 'No student found';
+  WHEN OTHERS THEN
+    RETURN 'Error occurred: ' || SQLERRM;
+END get_student_name;
+
+select * from students
+where name=get_student_name(3)
+```
+![image](https://github.com/user-attachments/assets/0301b6a1-1419-4798-a958-e8a6228d1729)
+
+### III. TRIGGERS
+
+A trigger is a stored procedure in a database that automatically invokes whenever a special event in the database occurs.
+
+DDL Trigger
+```sql
+create or replace TRIGGER safety
+BEFORE alter or drop
+on SCHEMA
+declare
+begin
+    DBMS_OUTPUT.PUT_LINE('You cannot alter or delete table');
+    RAISE_APPLICATION_ERROR(-20001, 'Altering or dropping tables is not allowed.');
+end;
+```
+
+DML Trigger
+```sql
+CREATE OR REPLACE TRIGGER insert_tr
+AFTER INSERT ON students
+FOR EACH ROW
+DECLARE
+BEGIN
+  DBMS_OUTPUT.PUT_LINE('Inserted successfully: ' || :NEW.roll);
+END;
+```
+
+<!-- The function calculates and returns the results after receiving certain inputs. The procedure performs certain tasks after receiving certain inputs. Functions do not support try-catch blocks. Procedures support try-catch blocks. -->
+
+### IV. Error handling and transaction management within stored procedures
+
+If any error occurs during the execution of the stored procedure, the transaction will be rolled back, otherwise, it will be committed. So, stored procedures can be used to encapsulate multiple SQL statements and ensure the integrity of data within a transaction.
+
+
+```sql
+CREATE OR REPLACE PROCEDURE UpdateEmployeeSalary (
+    EmployeeID IN Number,
+    NewSalary IN Number
+)
+IS
+BEGIN
+    UPDATE Employees
+    SET Salary = NewSalary
+    WHERE EmployeeID = EmployeeID;
+
+    IF SQL % ROWCOUNT = 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error: No employee found with the specified ID.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Transaction committed successfully. Salary updated.');
+    END IF;
+
+    EXCEPTION
+        WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Error occurred. Transaction rolled back. Error: ' || SQLERRM);
+END;
+```
