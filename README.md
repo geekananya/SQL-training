@@ -368,3 +368,87 @@ UNPIVOT (
 | January  | B       | 150   |
 | February | A       | 200   |
 | February | B       | 250   |
+
+## 5. Database Design and Optimization
+
+### I. Indexing: clustered vs. non-clustered indexes, covering indexes
+
+**Indexes** are on-disk structures that can speed up data retrieval in a database.These keys are stored in a structure (B-tree)
+
+**Clustered Indexes:** The rows are sorted and stored based on the values of the key column.
+
+**Unclustered Indexes:** Each index key value points to a particular row using row locator structure.
+
+**Covering Indexes:** All the columns requested in the query are available in the index. 
+
+- The query engine doesn't have to lookup the table again which can significantly increase the performance of the query.
+
+- Clustered indexes are always covering. (provided the columns in the select list are from the same table)
+
+- Unclustered indexes may or may not be covering; fully covered queries can be executed by adding nonkey columns to the leaf level of the nonclustered index to bypass existing index key limits.
+
+**Creating indexes**
+
+Retrieval time before indexing:
+![image](https://github.com/user-attachments/assets/14d5b6da-f854-4213-bd27-26ee22e6089e)
+
+```sql
+CREATE INDEX hiredate_idx
+on emp (ename, hiredate)
+
+select * from emp where hiredate < '12/12/1981'
+```
+
+Retrieval time after indexing
+![image](https://github.com/user-attachments/assets/607b2afd-b869-4bcd-9dc4-d42959e32d45)
+
+### II. Query Optimization Techniques
+
+1. Using Indexes
+2. WHERE instead of HAVING
+3. Avoid Queries inside a Loop
+4. Use Select instead of Select *
+5. Add Explain to the Beginning of Queries
+6. Reduce the use of wildcard(% in LIKE operator) characters
+7. Use Exist() instead of Count()
+8. Avoid subqueries
+9. Denormalization
+10. Make use of cloud database-specific features
+
+### III. Explain plan
+### IV. Sharding and Partitioning Techniques
+
+**Sharding:** Horizontal partitioning. Divides the database and distributes it across multiple servers for high availability and manageability.
+
+**Partitioning:** Dividing tables in a database instance into smaller sub-tables or partitions. Improves query performance and gives security control.
+
+### V. Concurrency control and isolation levels
+
+**Concurrency Control**
+
+1. Locking Protocols
+2. Timesharing Protocols
+3. Validation-based Locking
+4. Multiversion Concurrency Control
+
+**Isolation Levels**
+
+1. READ UNCOMMITTED - allows transactions to read uncommitted changes by other transactions. It provides minimal isolation and may lead to dirty reads and non-repeatable reads.
+2. READ COMMITTED - ensures that transactions only see committed data. It prevents dirty reads but may still result in non-repeatable reads and phantom reads.
+3. REPEATABLE READ - ensures that once a transaction reads a row, it will always see the same data. It prevents non-repeatable reads but may still allow phantom reads.
+4. SERIALIZABLE - guarantees the highest level of isolation, preventing concurrent transactions from causing anomalies. It ensures that all transactions are executed as if they were serialized.
+
+### VI. Deadlocks and handling
+
+Occur when one transaction is waiting to do operations on a data item, but it is being held (locked) exclusively by another transaction, which is waiting for another data item for indefinite time.
+
+Conditions for deadlock -
+
+1. Mutual Exclusion
+2. Hold and Wait
+3. Non-premption
+4. Circular wait
+
+Deadlock Handling -
+- Prevention: Wound-Wait, Wait-Die (based on transaction timestamp)
+- Removal: Aborting, Ageing, Lock conversion (upgrading and downgrading)
